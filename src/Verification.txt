@@ -1,0 +1,250 @@
+exec (acomp a) (0,s,[]) == (length (acomp a), s, [aval a s])
+
+Proof:
+
+Case a = N i, where i is any arbitrary integer:
+         acomp a = acomp (N i)
+(applying acomp) = [LOADI i]
+
+	exec (acomp a) (0,s,[]) = exec ([LOADI i]) (0,s,[])
+            (applying exec) = exec ([LOADI i]) (iexec ([LOADI i] !! 0) (0,s,[]))
+              (applying !!) = exec ([LOADI i]) (iexec (LOADI i) (0,s,[]))
+           (applying iexec) = exec ([LOADI i]) (1,s,i:[])
+               (applying :) = exec ([LOADI i]) (1,s,[i])
+            (applying exec) = (1, s, [i])
+
+    (length (acomp a), s, [aval a s]) = (length [LOADI i], s, [aval (N i) s])
+                    (applying length) = (1, s, [aval (N i) s])
+                      (applying aval) = (1, s, [i])
+                                      = exec (acomp a) (0,s,[])
+
+Case a = V var, where var is an arbitrary variable stored in s. Let v be its value.
+         acomp a = acomp (V var)
+(applying acomp) = [LOAD var]
+
+    exec (acomp a) (0,s,[]) = exec ([LOAD var]) (0,s,[])
+            (applying exec) = exec ([LOAD var]) (iexec ([LOAD var] !! 0) (0,s,[]))
+              (applying !!) = exec ([LOAD var]) (iexec (LOAD var) (0,s,[]))
+           (applying iexec) = exec ([LOAD var]) (1,s,(state ! var):[])
+               (applying !) = exec ([LOAD var]) (1,s,v:[])
+               (applying :) = exec ([LOAD var]) (1,s,[v])
+            (applying exec) = (1, s, [v])
+
+    (length (acomp a), s, [aval a s]) = (length [LOAD var], s, [aval (V var) s])
+                    (applying length) = (1, s, [aval (V var) s])
+                      (applying aval) = (1, s, [(state ! var)])
+                         (applying !) = (1, s, [v])
+                                      = exec (acomp a) (0,s,[])
+
+Case a = Plus (N i) (V var), where i is an arbitrary integer and var is an arbitrary variable. Let v be the value of var.
+                acomp a = acomp Plus (N i) (V var)
+       (applying acomp) = acomp (N i) ++ acomp (V var) ++ [ADD]
+       (applying acomp) = [LOADI i] ++ acomp (V var) ++ [ADD]
+       (applying acomp) = [LOADI i] ++ [LOAD var] ++ [ADD]
+          (applying ++) = [LOADI i, LOAD var] ++ [ADD]
+          (applying ++) = [LOADI i, LOAD var, ADD]
+
+    exec (acomp a) (0,s,[]) = exec ([LOADI i, LOAD var, ADD]) (0,s,[])
+            (applying exec) = exec ([LOADI i, LOAD var, ADD]) (iexec ([LOADI i, LOAD var, ADD] !! 0) (0,s,[]))
+            (applying !!) = exec ([LOADI i, LOAD var, ADD]) (iexec (LOADI i) (0,s,[]))
+           (applying iexec) = exec ([LOADI i, LOAD var, ADD]) (1,s,i:[])
+               (applying :) = exec ([LOADI i, LOAD var, ADD]) (1,s,[i])
+            (applying exec) = exec ([LOADI i, LOAD var, ADD]) (iexec ([LOADI i, LOAD var, ADD] !! 1) (1,s,[i]))
+              (applying !!) = exec ([LOADI i, LOAD var, ADD]) (iexec (LOAD var) (1,s,[i]))
+           (applying iexec) = exec ([LOADI i, LOAD var, ADD]) (2,s,(s ! var):[i])
+               (applying !) = exec ([LOADI i, LOAD var, ADD]) (2,s,v:[i])
+               (applying :) = exec ([LOADI i, LOAD var, ADD]) (2,s,[v,i])
+            (applying exec) = exec ([LOADI i, LOAD var, ADD]) (iexec ([LOADI i, LOAD var, ADD] !! 2) (2,s,[v,i]))
+              (applying !!) = exec ([LOADI i, LOAD var, ADD]) (iexec ADD (2,s,[v,i]))
+           (applying iexec) = exec ([LOADI i, LOAD var, ADD]) (3,s,(v+i):[])
+               (applying :) = exec ([LOADI i, LOAD var, ADD]) (3,s,[v+i])
+            (applying exec) = (3, s, [v + i])
+
+    (length (acomp a), s, [aval a s]) = (length [LOADI i, LOADI j, ADD], s, [aval (Plus (N i) (V var)) s])
+                    (applying length) = (3,s,[aval (Plus (N i) (V var)) s])
+                      (applying aval) = (3,s,[aval (N i) s + aval (V var) s])
+                      (applying aval) = (3,s,[i+(aval (V var) s)])
+                      (applying aval) = (3,s,[i+(s ! var)])
+                         (applying !) = (3, s, [i + v])
+                 (commutativity of +) = (3, s, [v + i])
+                                      = exec (acomp a) (0,s,[])
+
+Case a = Plus (V var) (N i), where i is an arbitrary integer and var is an arbitrary variable. Let v be the value of var.
+                acomp a = acomp (Plus (V var) (N i))
+       (applying acomp) = acomp (V var) ++ acomp (N i) ++ [ADD]
+       (applying acomp) = [LOAD var] ++ acomp (V var) ++ [ADD]
+       (applying acomp) = [LOAD var] ++ [LOADI i] ++ [ADD]
+          (applying ++) = [LOAD var, LOADI i] ++ [ADD]
+          (applying ++) = [LOAD var, LOADI i, ADD]
+
+    exec (acomp a) (0,s,[]) = exec ([LOAD var, LOADI i, ADD]) (0,s,[])
+            (applying exec) = exec ([LOAD var, LOADI i, ADD]) (iexec ([LOAD var, LOADI i, ADD] !! 0) (0,s,[]))
+              (applying !!) = exec ([LOAD var, LOADI i, ADD]) (iexec (LOAD var) (0,s,[]))
+           (applying iexec) = exec ([LOAD var, LOADI i, ADD]) (1,s,(s ! var):[])
+               (applying !) = exec ([LOAD var, LOADI i, ADD]) (1,s,v:[])
+               (applying :) = exec ([LOAD var, LOADI i, ADD]) (1,s,[v])
+            (applying exec) = exec ([LOAD var, LOADI i, ADD]) (iexec ([LOAD var, LOADI i, ADD] !! 1) (1,s,[i]))
+              (applying !!) = exec ([LOAD var, LOADI i, ADD]) (iexec (LOADI i) (1,s,[v]))
+           (applying iexec) = exec ([LOAD var, LOADI i, ADD]) (2,s,i:[v])
+               (applying :) = exec ([LOAD var, LOADI i, ADD]) (2,s,[i,v])
+            (applying exec) = exec ([LOAD var, LOADI i, ADD]) (iexec ([LOAD var, LOADI i, ADD] !! 2) (2,s,[i,v]))
+              (applying !!) = exec ([LOAD var, LOADI i, ADD]) (iexec ADD (2,s,[i,v]))
+           (applying iexec) = exec ([LOAD var, LOADI i, ADD]) (3,s,(i+v):[])
+               (applying :) = exec ([LOAD var, LOADI i, ADD]) (3,s,[i+v])
+            (applying exec) = (3, s, [i + v])
+
+    (length (acomp a), s, [aval a s]) = (length [LOAD var, LOADI i, ADD], s, [aval (Plus (V var) (N i)) s])
+                    (applying length) = (3,s,[aval (Plus (V var) (N i)) s])
+                      (applying aval) = (3,s,[aval (V var) s + aval (N i) s])
+                      (applying aval) = (3,s,[(s ! var)+(aval (N i) s)])
+                         (applying !) = (3,s,[v+(aval (N i) s)])
+                      (applying aval) = (3,s,[v+i])
+                         (applying !) = (3, s, [v + i])
+                 (commutativity of +) = (3, s, [i + v])
+                                      = exec (acomp a) (0,s,[])
+
+Case a = Plus (V var1) (V var2), where var1 and var2 are two arbitrary variables. Let v1 and v2 be their values respectively.
+         acomp a = acomp Plus (V var1) (V var2)
+(applying acomp) = acomp (V var1) ++ acomp (V var2) ++ [ADD]
+(applying acomp) = [LOAD var1] ++ acomp (V var2) ++ [ADD]
+(applying acomp) = [LOAD var1] ++ [LOAD var2] ++ [ADD]
+   (applying ++) = [LOAD var1, LOAD var1] ++ [ADD]
+   (applying ++) = [LOAD var1, LOAD var2, ADD]
+
+    exec (acomp a) (0,s,[]) = exec ([LOAD var1, LOAD var2, ADD]) (0,s,[])
+            (applying exec) = exec ([LOAD var1, LOAD var2, ADD]) (iexec ([LOAD var1, LOAD var2, ADD] !! 0) (0,s,[]))
+              (applying !!) = exec ([LOAD var1, LOAD var2, ADD]) (iexec (LOAD var1) (0,s,[]))
+           (applying iexec) = exec ([LOAD var1, LOAD var2, ADD]) (1,s,(s ! var1):[])
+               (applying !) = exec ([LOAD var1, LOAD var2, ADD]) (1,s,v1:[])
+               (applying :) = exec ([LOAD var1, LOAD var2, ADD]) (1,s,[v1])
+            (applying exec) = exec ([LOAD var1, LOAD var2, ADD]) (iexec ([LOAD var1, LOAD var2, ADD] !! 1) (1,s,[v1]))
+              (applying !!) = exec ([LOAD var1, LOAD var2, ADD]) (iexec (LOAD var2) (1,s,[v1]))
+           (applying iexec) = exec ([LOAD var1, LOAD var2, ADD]) (2,s,(s ! var2):[v1])
+               (applying !) = exec ([LOAD var1, LOAD var2, ADD]) (2,s,v2:[v1])
+               (applying :) = exec ([LOAD var1, LOAD var2, ADD]) (2,s,[v2,v1])
+            (applying exec) = exec ([LOAD var1, LOAD var2, ADD]) (iexec ([LOAD var1, LOAD var2, ADD] !! 2) (2,s,[v2,v1]))
+              (applying !!) = exec ([LOAD var1, LOAD var2, ADD]) (iexec ADD (2,s,[v2,v1]))
+           (applying iexec) = exec ([LOAD var1, LOAD var2, ADD]) (3,s,(v2+v1):[])
+               (applying :) = exec ([LOAD var1, LOAD var2, ADD]) (3,s,[v2+v1])
+            (applying exec) = (3, s, [v2 + v1])
+
+    (length (acomp a), s, [aval a s]) = (length ([LOAD var1, LOAD var2, ADD]), s, [aval ([LOAD var1, LOAD var2, ADD]), s])
+                    (applying length) = (3,s,[aval ([LOAD var1, LOAD var2, ADD]), s])
+                      (applying aval) = (3,s,[aval (LOAD var1) s + aval (LOAD var2) s])
+                      (applying aval) = (3,s,[(s ! var1) + aval (LOAD var2) s])
+                         (applying !) = (3,s,[v1 + aval (LOAD var2) s])
+                      (applying aval) = (3,s,[v1 + (s ! var2)])
+                         (applying !) = (3,s,[v1 + v2])
+                 (commutativity of +) = (3,s,[v2 + v1])
+                                      = exec (acomp a) (0,s,[])
+
+Case a = Plus (N x) (N y), where x and y are arbitrary integers.
+
+We define property p as:
+
+p(n) <=> exec (acomp a) (0,s,[]) = (length (acomp a), s, [aval a s]), where a = Plus (N n) (N y).
+
+Base case: We show that p(0) holds.
+
+                acomp a = acomp Plus (N 0) (N y)
+       (applying acomp) = acomp (N 0) ++ acomp (N y) ++ [ADD]
+       (applying acomp) = [LOADI 0] ++ acomp (N y) ++ [ADD]
+       (applying acomp) = [LOADI 0] ++ [LOADI j] ++ [ADD]
+          (applying ++) = [LOADI 0, LOADI j] ++ [ADD]
+          (applying ++) = [LOADI 0, LOADI j, ADD]
+
+    exec (acomp a) (0,s,[]) = exec ([LOADI 0, LOADI y, ADD]) (0,s,[])
+            (applying exec) = exec ([LOADI 0, LOADI y, ADD]) (iexec ([LOADI 0, LOADI y, ADD] !! 0) (0,s,[]))
+              (applying !!) = exec ([LOADI 0, LOADI y, ADD]) (iexec (LOADI 0) (0,s,[]))
+           (applying iexec) = exec ([LOADI 0, LOADI y, ADD]) (1,s,0:[])
+               (applying :) = exec ([LOADI 0, LOADI y, ADD]) (1,s,[0])
+            (applying exec) = exec ([LOADI 0, LOADI y, ADD]) (iexec ([LOADI 0, LOADI y, ADD] !! 1) (1,s,[0]))
+              (applying !!) = exec ([LOADI 0, LOADI y, ADD]) (iexec (LOADI y) (1,s,[0]))
+           (applying iexec) = exec ([LOADI 0, LOADI y, ADD]) (1,s,y:[i])
+               (applying :) = exec ([LOADI 0, LOADI y, ADD]) (2,s,[y,i])
+            (applying exec) = exec ([LOADI 0, LOADI y, ADD]) (iexec ([LOADI 0, LOADI y, ADD] !! 2) (2,s,[y,0]))
+              (applying !!) = exec ([LOADI 0, LOADI y, ADD]) (iexec ADD (2,s,[y,0]))
+           (applying iexec) = exec ([LOADI 0, LOADI y, ADD]) (3,s,(y+0):[])
+               (applying +) = exec ([LOADI 0, LOADI y, ADD]) (3,s,y:[])
+               (applying :) = exec ([LOADI 0, LOADI y, ADD]) (3,s,[y])
+            (applying exec) = (3, s, [y])
+
+    (length (acomp a), s, [aval a s]) = (length [LOADI 0, LOADI y, ADD], s, [aval (Plus (N 0) (N y)) s]
+                    (applying length) = (3, s, [aval (Plus (N 0) (N y)) s])
+                      (applying aval) = (3, s, [aval (N 0) s + aval (N y) s])
+                      (applying aval) = (3, s, [0 + aval (N y) s])
+                      (applying aval) = (3, s, [0 + y])
+                         (applying +) = (3, s, [y])
+                                      = exec (acomp a) (0,s,[])
+
+
+Inductive case:
+
+Assume p(k) holds. We need to show that p(k - 1) and p(k + 1) holds.
+
+Consider p(k - 1),
+
+         acomp a = Plus (N (k-1)) (N y)
+(applying acomp) = acomp (N (k-1)) ++ acomp (N y) ++ [ADD]
+(applying acomp) = [LOADI k-1] ++ acomp (N y) ++ [ADD]
+(applying acomp) = [LOADI k-1] ++ [LOADI y] ++ [ADD]
+   (applying ++) = [LOADI k-1, LOADI y] ++ [ADD]
+   (applying ++) = [LOADI k-1, LOADI y, ADD]
+
+exec (acomp a) (0,s,[]) = exec ([LOADI k-1, LOADI y, ADD]) (0,s,[])
+        (applying exec) = exec ([LOADI k-1, LOADI y, ADD]) (iexec ([LOADI k-1, LOADI y, ADD] !! 0)) (0,s,[])
+          (applying !!) = exec ([LOADI k-1, LOADI y, ADD]) (iexec (LOADI k-1)) (0,s,[])
+       (applying iexec) = exec ([LOADI k-1, LOADI y, ADD]) (1,s,(k-1):[])
+           (applying :) = exec ([LOADI k-1, LOADI y, ADD]) (1,s,[k-1])
+        (applying exec) = exec ([LOADI k-1, LOADI y, ADD]) (iexec ([LOADI k-1, LOADI y, ADD] !! 1)) (1,s,[k-1])
+          (applying !!) = exec ([LOADI k-1, LOADI y, ADD]) (iexec (LOADI y)) (1,s,[k-1])
+       (applying iexec) = exec ([LOADI k-1, LOADI y, ADD]) (2,s,y:[k-1])
+           (applying :) = exec ([LOADI k-1, LOADI y, ADD]) (2,s,[y,k-1])
+        (applying exec) = exec ([LOADI k-1, LOADI y, ADD]) (iexec ([LOADI k-1, LOADI y, ADD] !! 2) (2,s,[y,k-1]))
+          (applying !!) = exec ([LOADI k-1, LOADI y, ADD]) (iexec (ADD) (2,s,[y,k-1]))
+       (applying iexec) = exec ([LOADI k-1, LOADI y, ADD]) (3,s,(y+k-1):[])
+           (applying :) = exec ([LOADI k-1, LOADI y, ADD]) (3,s,[y+k-1])
+        (applying exec) = (3,s,[y+k-1])
+
+    (length (acomp a), s, [aval a s]) = (length ([LOADI k-1, LOADI y, ADD]), s, [aval (Plus (N k-1) (N y) s)])
+                    (applying length) = (3,s,[aval (Plus (N k-1) (N y) s)])
+                      (applying aval) = (3,s,[aval (Plus (N k-1)) s + aval (Plus (N y)) s])
+                      (applying aval) = (3,s,[(k-1) + aval (Plus (N y)) s])
+                      (applying aval) = (3,s,[(k-1)+y])
+                 (commutativity of +) = (3,s,[y+(k-1)])
+                 (associativity of +) = (3,s,[y+k-1])
+                                      = exec (acomp a) (0,s,[])
+
+Consider p(k+1),
+
+         acomp a = Plus (N (k+1)) (N y)
+(applying acomp) = acomp (N (k+1)) ++ acomp (N y) ++ [ADD]
+(applying acomp) = [LOADI k+1] ++ acomp (N y) ++ [ADD]
+(applying acomp) = [LOADI k+1] ++ [LOADI y] ++ [ADD]
+   (applying ++) = [LOADI k+1, LOADI y] ++ [ADD]
+   (applying ++) = [LOADI k+1, LOADI y, ADD]
+
+exec (acomp a) (0,s,[]) = exec ([LOADI k+1, LOADI y, ADD]) (0,s,[])
+        (applying exec) = exec ([LOADI k+1, LOADI y, ADD]) (iexec ([LOADI k+1, LOADI y, ADD] !! 0)) (0,s,[])
+          (applying !!) = exec ([LOADI k+1, LOADI y, ADD]) (iexec (LOADI k+1)) (0,s,[])
+       (applying iexec) = exec ([LOADI k+1, LOADI y, ADD]) (1,s,(k+1):[])
+           (applying :) = exec ([LOADI k+1, LOADI y, ADD]) (1,s,[k+1])
+        (applying exec) = exec ([LOADI k+1, LOADI y, ADD]) (iexec ([LOADI k+1, LOADI y, ADD] !! 1)) (1,s,[k+1])
+          (applying !!) = exec ([LOADI k+1, LOADI y, ADD]) (iexec (LOADI y)) (1,s,[k+1])
+       (applying iexec) = exec ([LOADI k+1, LOADI y, ADD]) (2,s,y:[k+1])
+           (applying :) = exec ([LOADI k+1, LOADI y, ADD]) (2,s,[y,k+1])
+        (applying exec) = exec ([LOADI k+1, LOADI y, ADD]) (iexec ([LOADI k+1, LOADI y, ADD] !! 2) (2,s,[y,k+1]))
+          (applying !!) = exec ([LOADI k+1, LOADI y, ADD]) (iexec (ADD) (2,s,[y,k+1]))
+       (applying iexec) = exec ([LOADI k+1, LOADI y, ADD]) (3,s,(y+k+1):[])
+           (applying :) = exec ([LOADI k+1, LOADI y, ADD]) (3,s,[y+k+1])
+        (applying exec) = (3,s,[y+k+1])
+
+    (length (acomp a), s, [aval a s]) = (length ([LOADI k+1, LOADI y, ADD]), s, [aval (Plus (N k+1) (N y) s)])
+                    (applying length) = (3,s,[aval (Plus (N k+1) (N y) s)])
+                      (applying aval) = (3,s,[aval (Plus (N k+1)) s + aval (Plus (N y)) s])
+                      (applying aval) = (3,s,[(k+1) + aval (Plus (N y)) s])
+                      (applying aval) = (3,s,[(k+1)+y])
+                 (commutativity of +) = (3,s,[y+(k+1)])
+                 (associativity of +) = (3,s,[y+k+1])
+                                      = exec (acomp a) (0,s,[])
+
